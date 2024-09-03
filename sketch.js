@@ -7,6 +7,7 @@ let imageVisible = true;
 let bgColor;
 let imgX, imgY;
 
+// test commit
 function setup() {
   createCanvas(400, 400);
   bgColor = color(240, 240, 240)
