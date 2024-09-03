@@ -35,7 +35,6 @@ function mouseClicked(event) {
 function keyPressed() {
   if (key === 'c') {
     print("pressed key C");
-    // Generate a random color for the background
     bgColor = color(random(255), random(255), random(255));
   }
 }
