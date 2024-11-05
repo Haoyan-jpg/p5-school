@@ -1,141 +1,119 @@
-let currentItem;
-let currentTime;
-let itemVisibleDuration = 4000;
-let bottleCount = 0;
-let score = 0;
-let level = 1;
-let totalLevels = 3;
-let timeLimit = 40;
-let remainingTime;
-let startTime;
-let waterBottleImage, gumboImage, bookImage;
-let backgroundImage;
-
-function preload() {
-  waterBottleImage = loadImage('https://recollect-images.global.ssl.fastly.net/api/image/500/material.default.plastic_water_bottle.png');
-  gumboImage = loadImage('https://www.threeolivesbranch.com/wp-content/uploads/2016/02/chicken-sausage-gumbo-threeolivesbranch-5.jpg');
-  bookImage = loadImage('https://cdn.shopify.com/s/files/1/0877/6118/files/footballglovesstickyspray_large.jpg?v=1530560723');
-  setBackgroundForLevel();
-}
+let boardSizeInput, winLengthInput, startButton;
+let boardSize = 12;
+let winLength = 5;
+let cellSize;
+let board = [];
+let currentPlayer = 1;
+let boardOffsetX, boardOffsetY;
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
-  startTime = millis();
-  remainingTime = timeLimit;
-  imageMode(CENTER);
-  spawnNewItem();
+  createCanvas(600, 600);
+  boardSizeInput = select('#boardSizeInput');
+  winLengthInput = select('#winLengthInput');
+  startButton = select('#startButton');
+  startButton.mousePressed(setupBoard);
+  setupBoard();
+}
+
+function setupBoard() {
+  boardSize = int(boardSizeInput.value());
+  winLength = int(winLengthInput.value());
+  cellSize = min(width, height) / (boardSize + 2);
+  boardOffsetX = (width - (boardSize * cellSize)) / 2;
+  boardOffsetY = (height - (boardSize * cellSize)) / 2;
+
+  board = [];
+  for (let i = 0; i < boardSize; i++) {
+    board[i] = [];
+    for (let j = 0; j < boardSize; j++) {
+      board[i][j] = 0;
+    }
+  }
+
+  currentPlayer = 1;
+  redraw();
 }
 
 function draw() {
-  image(backgroundImage, width / 2, height / 2, windowWidth, windowHeight);
-
-  let elapsedTime = (millis() - startTime) / 1000;
-  remainingTime = max(0, timeLimit - elapsedTime);
-
-  if (millis() - currentTime < itemVisibleDuration) {
-    displayItem(currentItem);
-  } else {
-    spawnNewItem();
+  background(240);
+  stroke(0);
+  for (let i = 0; i <= boardSize; i++) {
+    line(boardOffsetX + i * cellSize, boardOffsetY, boardOffsetX + i * cellSize, boardOffsetY + boardSize * cellSize);
+    line(boardOffsetX, boardOffsetY + i * cellSize, boardOffsetX + boardSize * cellSize, boardOffsetY + i * cellSize);
   }
 
-  textSize(30);
-  fill(0);
-  text(`Score: ${score}`, 50, 50);
-  text(`Time: ${nf(remainingTime, 2, 1)}s`, 50, 100);
-  text(`Level: ${level}`, 50, 150);
+  for (let i = 0; i < boardSize; i++) {
+    for (let j = 0; j < boardSize; j++) {
+      if (board[i][j] == 1) {
+        fill(0);
+        ellipse(boardOffsetX + i * cellSize + cellSize / 2, boardOffsetY + j * cellSize + cellSize / 2, cellSize * 0.8);
+      } else if (board[i][j] == 2) {
+        fill(255);
+        ellipse(boardOffsetX + i * cellSize + cellSize / 2, boardOffsetY + j * cellSize + cellSize / 2, cellSize * 0.8);
+      }
+    }
+  }
 
-  if (remainingTime <= 0) {
-    textSize(50);
-    text("Time's up! Game Over", width / 2 - 150, height / 2);
+  checkWinner();
+}
+
+function mousePressed() {
+  let i = floor((mouseX - boardOffsetX) / cellSize);
+  let j = floor((mouseY - boardOffsetY) / cellSize);
+
+  if (i >= 0 && j >= 0 && i < boardSize && j < boardSize && board[i][j] == 0) {
+    board[i][j] = currentPlayer;
+    currentPlayer = 3 - currentPlayer;
+  }
+  redraw();
+}
+
+function checkWinner() {
+  let winner = 0;
+
+  for (let i = 0; i < boardSize; i++) {
+    for (let j = 0; j < boardSize; j++) {
+      if (board[i][j] != 0) {
+        if (checkDirection(i, j, 1, 0) || checkDirection(i, j, 0, 1) || checkDirection(i, j, 1, 1) || checkDirection(i, j, 1, -1)) {
+          winner = board[i][j];
+          break;
+        }
+      }
+    }
+  }
+
+  if (winner != 0) {
     noLoop();
+    let winnerText = winner == 1 ? "Black wins!" : "White wins!";
+    textSize(32);
+    fill(0);
+    textAlign(CENTER, CENTER);
+    text(winnerText, width / 2, height / 2);
   }
 }
-function spawnNewItem() {
-  bottleCount++;
 
-  const itemProbabilities = [
-    { level: 1, type: 'bottle' },
-    { level: 2, condition: bottleCount % 5 === 0, type: 'gumbo', fallback: 'bottle' },
-    { level: 3, condition: bottleCount % 10 === 0, type: 'book', fallbackCondition: bottleCount % 5 === 0, fallbackType: 'gumbo', defaultType: 'bottle' }
-  ];
+function checkDirection(x, y, dx, dy) {
+  let count = 1;
 
-
-  let itemType = null;
-
-  for (let i = 0; i < itemProbabilities.length; i++) {
-    let prob = itemProbabilities[i];
-    if (level === prob.level) {
-      if (prob.condition) {
-        itemType = prob.type;
-      } else if (prob.fallbackCondition) {
-        itemType = prob.fallbackType;
-      } else {
-        itemType = prob.defaultType || prob.fallback || 'bottle';
-      }
+  for (let step = 1; step < winLength; step++) {
+    let nx = x + step * dx;
+    let ny = y + step * dy;
+    if (nx >= 0 && ny >= 0 && nx < boardSize && ny < boardSize && board[nx][ny] == board[x][y]) {
+      count++;
+    } else {
       break;
     }
   }
 
-  currentItem = {
-    type: itemType || 'bottle',
-    x: random(windowWidth),
-    y: random(windowHeight)
-  };
-
-  currentTime = millis();
-}
-
-
-function displayItem(item) {
-  if (item.type === 'bottle') {
-    image(waterBottleImage, item.x, item.y, 50, 50);
-  } else if (item.type === 'gumbo') {
-    image(gumboImage, item.x, item.y, 60, 60);
-  } else if (item.type === 'book') {
-    image(bookImage, item.x, item.y, 50, 50);
-  }
-}
-
-function mouseClicked() {
-  if (dist(mouseX, mouseY, currentItem.x, currentItem.y) < 30) {
-    if (currentItem.type === 'bottle') {
-      score++;
-    } else if (currentItem.type === 'gumbo') {
-      startTime += 5000;
-    } else if (currentItem.type === 'book') {
-      score += 5;
+  for (let step = 1; step < winLength; step++) {
+    let nx = x - step * dx;
+    let ny = y - step * dy;
+    if (nx >= 0 && ny >= 0 && nx < boardSize && ny < boardSize && board[nx][ny] == board[x][y]) {
+      count++;
+    } else {
+      break;
     }
-
-    if (score >= 15 && level === 1) {
-      level = 2;
-      resetTimer();
-    } else if (score >= 30 && score <= 40 && level === 2) {
-      level = 3;
-      resetTimer();
-    } else if (score > 40 && level === 3) {
-      level = 4;
-      resetTimer();
-    }
-
-    setBackgroundForLevel();
-    spawnNewItem();
   }
-}
 
-function setBackgroundForLevel() {
-  if (level === 1) {
-    backgroundImage = loadImage('https://images.pexels.com/photos/457882/pexels-photo-457882.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2');
-    timeLimit = 30;
-  } else if (level === 2) {
-    backgroundImage = loadImage('https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcQW04r9hD8fYYKs5tXkBbp1IaSvCvJfwy3ZAAR05jM7yd2no4wWVLAvug5hdmQvzgKnUGlhLYF2IlYIkXpKV0aw-mRm9yxPmNk1J9meWw');
-    timeLimit = 15;
-  } else if (level === 3) {
-    backgroundImage = loadImage('https://static.clubs.nfl.com/image/private/t_editorial_landscape_12_desktop/saints/wbyjqae7lzipfckei4b7.jpg');
-    timeLimit = 8;
-  }
-}
-
-function resetTimer() {
-  startTime = millis();
-  remainingTime = timeLimit;
+  return count >= winLength;
 }
