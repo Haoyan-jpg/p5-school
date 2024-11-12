@@ -3,15 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gomoku Game</title>
+  <title>Gomoku Game with AI</title>
   <!-- Link the p5.js library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
-  
+
   <style>
     /* Center everything in the page */
     body {
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
@@ -46,17 +45,40 @@
     button:hover {
       background-color: #2980b9;
     }
+
+    /* Toolbar for Play with Player and Play with AI buttons */
+    #toolbar {
+      position: absolute;
+      left: 20px;
+      top: 50px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #toolbar button {
+      font-size: 18px;
+      padding: 12px;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
-  <!-- Control Panel -->
+  <!-- Toolbar for AI/Player Mode Selection -->
+  <div id="toolbar">
+    <button id="playPlayerButton">Play with Player</button>
+    <button id="playAIButton">Play with AI</button>
+  </div>
+
+  <!-- Control Panel for Game Settings -->
   <div class="controls">
     <input id="boardSizeInput" type="number" placeholder="Board Size" value="12" min="5" max="20">
     <input id="winLengthInput" type="number" placeholder="Win Length" value="5" min="3" max="10">
     <button id="startButton">🎲 Set Board</button>
   </div>
 
-  <!-- p5.js Script -->
+  <!-- Game Script -->
   <script src="p5.js"></script>
 </body>
 </html>
+ 
