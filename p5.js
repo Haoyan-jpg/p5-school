@@ -80,56 +80,50 @@ function mousePressed() {
     }
   }
 }
+
 function getMathBasedMove() {
   console.log("Calculating move based on board analysis.");
   let bestMove = null;
   let maxScore = -1;
 
-  // First priority: Check for a winning move for the computer
   for (let i = 0; i < boardSize; i++) {
     for (let j = 0; j < boardSize; j++) {
       if (board[i][j] === 0) {
-        // Check if placing here will result in a win for the computer
         board[i][j] = 2;
         if (checkWinnerForPlayer(2)) {
-          board[i][j] = 0;  // Reset the board
-          board[i][j] = 2;  // Place here to win
+          board[i][j] = 0;
+          board[i][j] = 2;
           currentPlayer = 1;
           console.log(`Computer placed on (${i}, ${j}) to win.`);
           redraw();
           return;
         }
-        board[i][j] = 0;  // Reset the board
+        board[i][j] = 0;
       }
     }
   }
 
-  // Second priority: Block the player's winning move
   for (let i = 0; i < boardSize; i++) {
     for (let j = 0; j < boardSize; j++) {
       if (board[i][j] === 0) {
-        // Check if placing here will block the player from winning
         board[i][j] = 1;
         if (checkWinnerForPlayer(1)) {
-          board[i][j] = 0;  // Reset the board
-          board[i][j] = 2;  // Block player from winning
+          board[i][j] = 0;
+          board[i][j] = 2;
           currentPlayer = 1;
           console.log(`Computer placed on (${i}, ${j}) to block player.`);
           redraw();
           return;
         }
-        board[i][j] = 0;  // Reset the board
+        board[i][j] = 0;
       }
     }
   }
 
-  // Third priority: Make the best strategic move
   for (let i = 0; i < boardSize; i++) {
     for (let j = 0; j < boardSize; j++) {
       if (board[i][j] === 0) {
-        // Evaluate potential move score based on surrounding awareness
-        let score = evaluatePosition(i, j, 2) + evaluatePosition(i, j, 1) * 0.8; // Prioritize blocking
-
+        let score = evaluatePosition(i, j, 2) + evaluatePosition(i, j, 1) * 0.8;
         if (score > maxScore) {
           maxScore = score;
           bestMove = { x: i, y: j };
@@ -139,14 +133,13 @@ function getMathBasedMove() {
   }
 
   if (bestMove) {
-    board[bestMove.x][bestMove.y] = 2;  // Computer places as player 2
+    board[bestMove.x][bestMove.y] = 2;
     currentPlayer = 1;
     console.log(`Computer placed on (${bestMove.x}, ${bestMove.y}) strategically with score ${maxScore}.`);
     redraw();
   }
 }
 
-// Function to check if a player has won (used to check potential winning moves for both players)
 function checkWinnerForPlayer(player) {
   for (let i = 0; i < boardSize; i++) {
     for (let j = 0; j < boardSize; j++) {
@@ -160,11 +153,9 @@ function checkWinnerForPlayer(player) {
   return false;
 }
 
-// Function to check a specific direction for a potential win for a player
 function checkDirectionForPlayer(x, y, dx, dy, player) {
   let count = 1;
 
-  // Check forward
   for (let step = 1; step < winLength; step++) {
     let nx = x + step * dx;
     let ny = y + step * dy;
@@ -175,7 +166,6 @@ function checkDirectionForPlayer(x, y, dx, dy, player) {
     }
   }
 
-  // Check backward
   for (let step = 1; step < winLength; step++) {
     let nx = x - step * dx;
     let ny = y - step * dy;
@@ -192,21 +182,18 @@ function checkDirectionForPlayer(x, y, dx, dy, player) {
 function evaluatePosition(x, y, player) {
   let score = 0;
 
-  // Check all directions
-  score += countInDirection(x, y, 1, 0, player); // Horizontal
-  score += countInDirection(x, y, 0, 1, player); // Vertical
-  score += countInDirection(x, y, 1, 1, player); // Diagonal \
-  score += countInDirection(x, y, 1, -1, player); // Diagonal /
+  score += countInDirection(x, y, 1, 0, player);
+  score += countInDirection(x, y, 0, 1, player);
+  score += countInDirection(x, y, 1, 1, player);
+  score += countInDirection(x, y, 1, -1, player);
 
   return score;
 }
 
-// Count consecutive pieces in a given direction for scoring
 function countInDirection(x, y, dx, dy, player) {
-  let count = 1;  // Start with the current position
+  let count = 1;
   let openEnds = 0;
 
-  // Forward check
   for (let step = 1; step < winLength; step++) {
     let nx = x + step * dx;
     let ny = y + step * dy;
@@ -222,7 +209,6 @@ function countInDirection(x, y, dx, dy, player) {
     }
   }
 
-  // Backward check
   for (let step = 1; step < winLength; step++) {
     let nx = x - step * dx;
     let ny = y - step * dy;
@@ -238,23 +224,18 @@ function countInDirection(x, y, dx, dy, player) {
     }
   }
 
-  // Score based on the length of the sequence and open ends
-  if (count >= winLength - 1 && openEnds > 0) return 100;  // Winning or blocking move
-  if (count === winLength - 2 && openEnds > 0) return 50;   // Create opportunity or block threat
-  if (count === winLength - 3 && openEnds > 0) return 10;   // Build up lines
-  return count;  // Return count as basic score
+  if (count >= winLength - 1 && openEnds > 0) return 100;
+  if (count === winLength - 2 && openEnds > 0) return 50;
+  if (count === winLength - 3 && openEnds > 0) return 10;
+  return count;
 }
+
 function checkWinner() {
   for (let i = 0; i < boardSize; i++) {
     for (let j = 0; j < boardSize; j++) {
       if (board[i][j] !== 0) {
         const player = board[i][j];
-        if (
-          checkDirection(i, j, 1, 0, player) ||  // Horizontal
-          checkDirection(i, j, 0, 1, player) ||  // Vertical
-          checkDirection(i, j, 1, 1, player) ||  // Diagonal \
-          checkDirection(i, j, 1, -1, player)    // Diagonal /
-        ) {
+        if (checkDirection(i, j, 1, 0, player) || checkDirection(i, j, 0, 1, player) || checkDirection(i, j, 1, 1, player) || checkDirection(i, j, 1, -1, player)) {
           noLoop();
           const winnerText = player === 1 ? "Black wins!" : "White wins!";
           textSize(32);
